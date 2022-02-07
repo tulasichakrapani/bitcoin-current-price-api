@@ -2,8 +2,11 @@ trigger:
   batch: true
   branches:
     include:
+    - feature/*
     - develop
     - master
+    exclude:
+    - 'refs/tags/*'
   paths:
     exclude:
     - azure-pipelines.yml
@@ -11,6 +14,7 @@ trigger:
 
 pool:
   vmImage: 'ubuntu-latest'
+
 variables:
 - group: VARIABLE_GROUP
 - name: MAVEN_CACHE_FOLDER
@@ -19,25 +23,34 @@ variables:
   value: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
 
 steps:
-
+# Cache files between runs
+# Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/cache?view=azure-devops
 - task: CacheBeta@0
+  displayName: Cache Maven Local Repo
   inputs:
     key: $(Build.SourcesDirectory)/pom.xml
     path: $(MAVEN_CACHE_FOLDER)
-  displayName: Cache Maven local repo
+  
 
+# Download a secure file to the agent machine
+# Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/download-secure-file?view=azure-devops
 - task: DownloadSecureFile@1
-  name: MavenSettingsXML
+#The name with which to reference the secure file's path on the agent, like $(mySecureFile.secureFilePath)
+  name: MavenSettingsXML 
   inputs:
     secureFile: 'settings.xml'
 
+# Run a PowerShell script on Linux, macOS, or Windows
+# Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/powershell?view=azure-devops
 - task: PowerShell@2
   inputs:
     targetType: 'inline'
     script: |
       New-Item -Type Directory -Force "${HOME}/.m2"
       Copy-Item -Force "$(MavenSettingsXML.secureFilePath)" "${HOME}/.m2/settings.xml"
-      
+
+# Build, test, and deploy with Apache Maven
+# Reference: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/maven?view=azure-devops      
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
