@@ -33,7 +33,7 @@
 				<extensions>true</extensions>
 				<configuration>
 					<cloudHubDeployment>
-						<server>anypoint.credentials</server>
+						<server>${server}</server>
 						<uri>https://anypoint.mulesoft.com</uri>
 						<muleVersion>${muleVersion}</muleVersion>
 						<applicationName>${applicationName}</applicationName>
